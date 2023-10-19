@@ -16,6 +16,7 @@ target_link_libraries(
     PRIVATE
       ${ALPACABOT_LIBRARY}
       astar
+      ab-pathfinding
 )
 
 # Set the output directory for the shared library

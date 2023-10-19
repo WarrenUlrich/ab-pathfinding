@@ -18,6 +18,9 @@ void Setup() {
 }
 
 bool OnStart() {
+  const std::filesystem::path user_path = getenv("USERPROFILE");
+  std::ifstream data(user_path / "AlpacaBot" / "Collision Data" / "collision_data.csv");
+  ab::pathfinding::load_collision_csv(data);
   return true;
 }
 
@@ -29,11 +32,7 @@ bool Loop() {
   auto location = player.GetTile();
   auto now = std::chrono::system_clock::now();
 
-  auto path = ab::pathfinding::find_path(location, Tile{
-    location.X + 10,
-    location.Y + 10,
-    location.Plane
-  });
+  auto path = ab::pathfinding::find_path(location, Tile{3176, 3455, 0});
 
   auto end = std::chrono::system_clock::now();
 
@@ -50,6 +49,8 @@ bool Loop() {
     Paint::DrawTile(tile, 255, 0, 0, 255);
   }
   Paint::SwapBuffer();
+
+  // Mainscreen::WalkPath(path.value(), 5);
   return true;
 }
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.17)
 
 project(ab-pathfinding VERSION 1.0.0 LANGUAGES CXX)
 
@@ -19,6 +19,10 @@ list(
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${EXTRA_INCLUDE_DIRS}
+)
+
+add_library(
+    ${PROJECT_NAME} INTERFACE
 )
 
 find_library(ALPACABOT_LIBRARY NAMES AlpacaLibrary PATHS ${EXTRA_LIB_DIRS} NO_DEFAULT_PATH)
