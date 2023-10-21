@@ -7,14 +7,16 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "bank.hpp"
+#include "navigation_link.hpp"
 
-class region_plane {
+class region_plane { // TODO: Put this somewhere cleaner
 public:
   std::int32_t region;
   std::int32_t plane;
@@ -52,13 +54,25 @@ template <> struct hash<region_plane> {
     return h1 ^ (h2 << 1);
   }
 };
+
+template <> struct hash<pathfinding::navigation_link> {
+  std::size_t
+  operator()(const pathfinding::navigation_link &nv) const {
+    std::size_t h1 = std::hash<Tile>()(nv.from);
+    std::size_t h2 = std::hash<Tile>()(nv.to);
+    return h1 ^ (h2 << 1);
+  }
+};
 } // namespace std
 
-namespace ab::pathfinding {
+namespace pathfinding {
 std::unordered_set<region_plane> mapped_regions;
 
 std::unordered_map<Tile, Pathfinding::COLLISION_FLAG>
     collision_map;
+
+std::unordered_map<Tile, std::shared_ptr<navigation_link>>
+    navigation_link_map;
 
 void load_collision_csv(std::ifstream &file) {
   std::string line;
@@ -84,24 +98,34 @@ void load_collision_csv(std::ifstream &file) {
   }
 }
 
-class tile_cost_fn {
-public:
-  double operator()(const Tile &t1, const Tile &t2) const {
-    return t1.DistanceFrom(t2);
-  }
-};
+using path_step =
+    std::variant<Tile, std::shared_ptr<navigation_link>>;
 
-class tile_heuristic_fn {
+class tile_cost_heuristic_fn {
 public:
-  double operator()(const Tile &t1, const Tile &t2) const {
-    return t1.DistanceFrom(t2);
+  double operator()(const path_step &t1,
+                    const path_step &t2) const {
+    auto to_tile = [](const path_step &pfn) {
+      if (auto tile = std::get_if<Tile>(&pfn)) {
+        return *tile;
+      } else {
+        return std::get<std::shared_ptr<navigation_link>>(
+                   pfn)
+            ->from;
+      }
+    };
+
+    auto tile1 = to_tile(t1);
+    auto tile2 = to_tile(t2);
+
+    return tile1.DistanceFrom(tile2);
   }
 };
 
 class tile_neighbors_fn {
 public:
-  std::vector<Tile> operator()(const Tile &t) const {
-    std::vector<Tile> neighbors;
+  std::vector<path_step> operator()(const Tile &t) const {
+    std::vector<path_step> neighbors;
 
     auto region =
         ((std::int32_t)(((t.X >> 6) << 8) | (t.Y >> 6)));
@@ -133,6 +157,11 @@ public:
       const auto neighbor =
           Tile{t.X + dx, t.Y + dy, t.Plane};
 
+      if (auto search = navigation_link_map.find(neighbor);
+          search != navigation_link_map.end()) {
+        neighbors.emplace_back(search->second);
+      }
+
       auto search = collision_map.find(neighbor);
       if (search == collision_map.end()) {
         neighbors.emplace_back(neighbor);
@@ -147,17 +176,35 @@ public:
 
     return neighbors;
   }
+
+  std::vector<path_step> operator()(
+      const std::shared_ptr<navigation_link> &t) const {
+    return this->operator()(t->to);
+  }
+
+  std::vector<path_step>
+  operator()(const path_step &t) const {
+    if (auto tile = std::get_if<Tile>(&t)) {
+      return this->operator()(*tile);
+    } else if (auto nv = std::get_if<
+                   std::shared_ptr<navigation_link>>(&t)) {
+      return this->operator()(*nv);
+    }
+
+    return {};
+  }
 };
 
 using pathfinder =
-    astar::pathfinder<Tile, tile_cost_fn, tile_heuristic_fn,
+    astar::pathfinder<path_step, tile_cost_heuristic_fn,
+                      tile_cost_heuristic_fn,
                       tile_neighbors_fn>;
 
 auto find_path(const Tile &start, const Tile &destination) {
-  static pathfinder pf =
-      pathfinder{tile_cost_fn{}, tile_heuristic_fn{},
-                 tile_neighbors_fn{}};
+  static auto pf = pathfinder{tile_cost_heuristic_fn{},
+                              tile_cost_heuristic_fn{},
+                              tile_neighbors_fn{}};
 
   return pf.search(start, destination);
 }
-} // namespace ab::pathfinding
+} // namespace pathfinding

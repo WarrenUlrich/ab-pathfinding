@@ -32,3 +32,4 @@ endif()
 
 add_subdirectory(astar)
 add_subdirectory(test-script)
+add_subdirectory(collision-cacher)
