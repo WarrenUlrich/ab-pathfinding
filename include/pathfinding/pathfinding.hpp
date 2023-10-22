@@ -207,4 +207,105 @@ auto find_path(const Tile &start, const Tile &destination) {
 
   return pf.search(start, destination);
 }
+
+bool walk_path(const pathfinder::path &path) {
+  using path_iter_t = pathfinder::path::const_iterator;
+
+  const auto on_screen = [](const Tile &tile) {
+    const auto t2s =
+        Internal::TileToMainscreen(tile, 0, 0, 0);
+    if (!t2s)
+      return false;
+
+    const auto blocking_boxes =
+        Mainscreen::GetBlockingWidgetBoxes();
+    for (const auto &box : blocking_boxes) {
+      if (box.Contains(t2s))
+        return false;
+    }
+
+    const auto canvas = Internal::Client.GetCanvas();
+    const auto box =
+        Box(0, 0, canvas.GetWidth(), canvas.GetHeight());
+    return box.Contains(t2s);
+  };
+
+  const auto get_next_step = [&](path_iter_t iter,
+                                 path_iter_t end) {
+    auto result = iter;
+
+    const auto player = Players::GetLocal();
+    if (!player)
+      return result;
+
+    for (; iter < end; ++iter) {
+      if (const auto tile = std::get_if<Tile>(&*iter)) {
+        if (!on_screen(*tile) ||
+            tile->DistanceFrom(player.GetTile()) >= 15)
+          continue;
+
+        result = iter;
+      } else if (const auto nv = std::get_if<
+                     std::shared_ptr<navigation_link>>(
+                     &*iter)) {
+        auto to = (*nv)->to;
+        if (to.DistanceFrom(player.GetTile()) <= 5) {
+          result = iter;
+        }
+
+        break;
+      }
+    }
+
+    return result;
+  };
+
+  const auto handle_tile = [](const Tile &tile) {
+    if (!Mainscreen::ClickTile(tile)) {
+      return false;
+    }
+
+    return WaitFunc(1000, 50, [&]() {
+      return Minimap::GetDestination() == tile;
+    });
+  };
+
+  auto path_iter = path.begin();
+  const auto last_step = path.end() - 1;
+
+  while (path_iter != last_step) {
+    // Check if we're near the end.
+    if (const auto last_tile =
+            std::get_if<Tile>(&*last_step)) {
+      const auto player = Players::GetLocal();
+      if (last_tile->DistanceFrom(player.GetTile()) < 5) {
+        return true;
+      }
+    }
+
+    // Check and set camera pitch
+    if (Camera::GetPitch() < 275) {
+      Camera::SetPitch(UniformRandom(275, 325));
+    }
+
+    const auto next_step =
+        get_next_step(path_iter, path.end());
+    if (const auto tile = std::get_if<Tile>(&*next_step)) {
+      if (!handle_tile(*tile))
+        continue;
+
+      path_iter = next_step;
+      Wait(UniformRandom(500, 2000));
+    } else if (const auto nv = std::get_if<
+                   std::shared_ptr<navigation_link>>(
+                   &*next_step)) {
+      if (!(*nv)->handle())
+        continue;
+
+      path_iter = next_step + 1;
+    }
+  }
+
+  return true;
+}
 } // namespace pathfinding
