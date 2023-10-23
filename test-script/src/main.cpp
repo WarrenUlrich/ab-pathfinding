@@ -1,10 +1,13 @@
 #include <Game/Core.hpp>
 
 #include <astar/astar.hpp>
+
 #include <pathfinding/gate_nv.hpp>
 #include <pathfinding/pathfinding.hpp>
 
 #include <chrono>
+
+#include <filesystem>
 
 void Setup() {
   ScriptInfo Info;
@@ -24,6 +27,7 @@ bool OnStart() {
   std::ifstream data(user_path / "AlpacaBot" /
                      "Collision Data" /
                      "collision_data.csv");
+
   pathfinding::load_collision_csv(data);
 
   pathfinding::navigation_link_map.emplace(

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.17)
 
 project(ab-pathfinding VERSION 1.0.0 LANGUAGES CXX)
 
+add_subdirectory(astar)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -22,7 +24,13 @@ include_directories(
 )
 
 add_library(
-    ${PROJECT_NAME} INTERFACE
+    ${PROJECT_NAME} STATIC
+        src/pathfinding.cpp
+)
+
+target_link_libraries(
+    ${PROJECT_NAME} PRIVATE 
+        astar
 )
 
 find_library(ALPACABOT_LIBRARY NAMES AlpacaLibrary PATHS ${EXTRA_LIB_DIRS} NO_DEFAULT_PATH)
@@ -30,6 +38,5 @@ if(NOT ALPACABOT_LIBRARY)
     message(FATAL_ERROR "AlpacaBot library (libAlpacaLibrary.a) not found!")
 endif()
 
-add_subdirectory(astar)
 add_subdirectory(test-script)
 add_subdirectory(collision-cacher)
