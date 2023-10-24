@@ -17,7 +17,8 @@ template <> struct hash<Tile> {
 };
 
 template <> struct hash<pathfinding::region_plane> {
-  std::size_t operator()(const pathfinding::region_plane &rp) const {
+  std::size_t
+  operator()(const pathfinding::region_plane &rp) const {
     std::size_t h1 = std::hash<std::int32_t>()(rp.region);
     std::size_t h2 = std::hash<std::int32_t>()(rp.plane);
     return h1 ^ (h2 << 1);
@@ -65,6 +66,11 @@ void load_collision_csv(std::ifstream &file) {
     mapped_regions.emplace(region, plane);
     collision_map.emplace(Tile(x, y, plane), flag);
   }
+}
+
+void add_navigation_link(
+    const std::shared_ptr<navigation_link> nvl) {
+  navigation_link_map.emplace(nvl->to, nvl);
 }
 
 class tile_cost_heuristic_fn {
@@ -245,8 +251,7 @@ bool walk_path(const path &path) {
     if (const auto last_tile =
             std::get_if<Tile>(&*last_step)) {
       const auto player = Players::GetLocal();
-      if (last_tile->DistanceFrom(player.GetTile()) < 5)
-      {
+      if (last_tile->DistanceFrom(player.GetTile()) < 5) {
         return true;
       }
     }
@@ -258,8 +263,7 @@ bool walk_path(const path &path) {
 
     const auto next_step =
         get_next_step(path_iter, path.end());
-    if (const auto tile = std::get_if<Tile>(&*next_step))
-    {
+    if (const auto tile = std::get_if<Tile>(&*next_step)) {
       if (!handle_tile(*tile))
         continue;
 

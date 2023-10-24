@@ -4,17 +4,13 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 
+#include <Core/Types/Tile.hpp>
+
+#include "bank.hpp"
 #include "navigation_link.hpp"
 #include "region_plane.hpp"
-
-class Tile;
-
-namespace std {
-template <> struct hash<Tile>;
-template <> struct hash<pathfinding::region_plane>;
-template <> struct hash<pathfinding::navigation_link>;
-} // namespace std
 
 namespace pathfinding {
 extern std::unordered_set<region_plane> mapped_regions;
@@ -27,6 +23,9 @@ extern std::unordered_map<Tile,
     navigation_link_map;
 
 void load_collision_csv(std::ifstream &file);
+
+void add_navigation_link(
+    const std::shared_ptr<navigation_link> nvl);
 
 using path_step =
     std::variant<Tile, std::shared_ptr<navigation_link>>;

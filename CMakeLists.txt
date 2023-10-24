@@ -18,25 +18,32 @@ list(
         "$ENV{USERPROFILE}/AlpacaBot/Library"
 )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${EXTRA_INCLUDE_DIRS}
-)
-
 add_library(
     ${PROJECT_NAME} STATIC
         src/pathfinding.cpp
+        src/bank.cpp
+        src/navigation_link.cpp
+        src/banks/bank_booth_bank.cpp
+        src/banks/banker_bank.cpp
 )
 
-target_link_libraries(
-    ${PROJECT_NAME} PRIVATE 
-        astar
+target_include_directories(
+    ${PROJECT_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${EXTRA_INCLUDE_DIRS}
 )
 
 find_library(ALPACABOT_LIBRARY NAMES AlpacaLibrary PATHS ${EXTRA_LIB_DIRS} NO_DEFAULT_PATH)
 if(NOT ALPACABOT_LIBRARY)
     message(FATAL_ERROR "AlpacaBot library (libAlpacaLibrary.a) not found!")
 endif()
+
+
+target_link_libraries(
+    ${PROJECT_NAME} PRIVATE 
+        astar
+        ${ALPACABOT_LIBRARY}
+)
 
 add_subdirectory(test-script)
 add_subdirectory(collision-cacher)

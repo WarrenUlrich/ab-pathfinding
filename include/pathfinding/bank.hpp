@@ -1,8 +1,11 @@
 #pragma once
 
-#include <Game/Core.hpp>
-
 #include <memory>
+#include <string>
+#include <vector>
+
+#include <Core/Types/Area.hpp>
+#include <Core/Types/Tile.hpp>
 
 namespace pathfinding {
 class bank {
@@ -11,50 +14,25 @@ public:
   Area area;
   Tile pathfinding_tile;
 
+  bank() = default;
+
+  bank(const bank &other);
+
   bank(const std::string &name, const Area &area,
-       const Tile &pathfinding_tile)
-      : name(std::move(name)), area(area),
-        pathfinding_tile(pathfinding_tile) {}
+       const Tile &pathfinding_tile);
 
-  bool at() const {
-    const auto player = Players::GetLocal();
-    if (!player)
-      return false;
-    
-    return area.Contains(player.GetTile());
-  }
+  bool at() const;
 
-  virtual bool can_use() const {
-    return true;
-  }
+  virtual bool can_use() const;
 
   virtual bool open() const = 0;
 
   virtual ~bank() = default;
 
-  static std::vector<std::unique_ptr<bank>> banks;
+  using bank_vec = std::vector<std::shared_ptr<bank>>;
 
-  static const bank* get_closest() {
-    auto& closest = banks.front();
-  
-    const auto player =  Players::GetLocal();
-    if (!player)
-      return closest.get();
+  static const bank_vec banks;
 
-    const auto location = player.GetTile();
-    std::int32_t dist = std::numeric_limits<std::int32_t>::max();
-
-    for (const auto& bank : banks) {
-      
-    }
-
-    return closest.get();
-  }
+  static bank_vec::const_iterator get_closest();
 };
-
-// std::vector<bank> bank::banks = {
-//     bank("Varrock West Bank",
-//          Area(Tile(3180, 3446, 0), Tile(3185, 3443, 0)),
-//          Tile(3182, 3441, 0))};
-
 } // namespace pathfinding
