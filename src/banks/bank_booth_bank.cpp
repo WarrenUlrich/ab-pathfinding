@@ -16,6 +16,6 @@ bool bank_booth_bank::open() const {
   if (!bank_booth.Interact("Bank Bank booth"))
     return false;
 
-  return WaitFunc(1000, 50, Bank::IsOpen);
+  return WaitFunc(2500, 50, Bank::IsOpen);
 }
 } // namespace pathfinding
