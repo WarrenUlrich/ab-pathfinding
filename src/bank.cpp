@@ -33,7 +33,7 @@ const bank::bank_vec bank::banks = {
   ),
   std::make_shared<banker_bank>(
     "Grand Exchange",
-    Area(Tile(), Tile()),
+    Area(Tile(3158, 3496, 0), Tile(3171, 3482, 0)),
     Tile(3164, 3485, 0)
   )
 };
