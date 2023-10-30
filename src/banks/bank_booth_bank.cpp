@@ -9,6 +9,9 @@ bank_booth_bank::bank_booth_bank(
     : bank(name, area, pathfinding_tile) {}
 
 bool bank_booth_bank::open() const {
+  if (Bank::IsOpen())
+    return true;
+
   const auto bank_booth = GameObjects::Get("Bank booth");
   if (!bank_booth)
     return false;
