@@ -282,4 +282,24 @@ bool walk_path(const path &path) {
   return true;
 }
 
+std::optional<Tile> find_walkable(const Tile &tile,
+                                  std::int32_t dist) {
+  for (std::int32_t x = -1; x <= dist; ++x) {
+    for (std::int32_t y = -1; y <= dist; ++y) {
+      const auto current =
+          Tile(tile.X + x, tile.Y + y, tile.Plane);
+      const auto search = collision_map.find(current);
+      if (search == collision_map.end())
+        return current;
+
+      if ((search->second & Pathfinding::BLOCKED) ||
+          (search->second & Pathfinding::OCCUPIED))
+        continue;
+
+      return current;
+    }
+  }
+
+  return {};
+}
 } // namespace pathfinding

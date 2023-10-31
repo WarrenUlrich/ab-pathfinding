@@ -37,4 +37,6 @@ std::optional<path> find_path(const Tile &start,
                               const Tile &dest);
 
 bool walk_path(const path &p);
+
+std::optional<Tile> find_walkable(const Tile &tile, std::int32_t dist);
 } // namespace pathfinding
