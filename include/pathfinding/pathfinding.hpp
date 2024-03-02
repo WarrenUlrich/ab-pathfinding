@@ -13,6 +13,10 @@
 #include "navigation_link.hpp"
 #include "region_plane.hpp"
 
+#include "navigation_links/navigation_links.hpp"
+
+#include "pathfinder_settings.hpp"
+
 namespace pathfinding {
 extern std::unordered_set<region_plane> mapped_regions;
 

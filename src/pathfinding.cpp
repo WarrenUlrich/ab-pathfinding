@@ -5,26 +5,9 @@
 #include <pathfinding/navigation_link.hpp>
 #include <pathfinding/pathfinding.hpp>
 #include <pathfinding/region_plane.hpp>
+#include <pathfinding/tile_hash.hpp>
 
 namespace std {
-template <> struct hash<Tile> {
-  std::size_t operator()(const Tile &tile) const {
-    std::size_t h1 = std::hash<std::int32_t>()(tile.X);
-    std::size_t h2 = std::hash<std::int32_t>()(tile.Y);
-    std::size_t h3 = std::hash<std::int32_t>()(tile.Plane);
-    return h1 ^ (h2 << 1) ^ (h3 << 2);
-  }
-};
-
-template <> struct hash<pathfinding::region_plane> {
-  std::size_t
-  operator()(const pathfinding::region_plane &rp) const {
-    std::size_t h1 = std::hash<std::int32_t>()(rp.region);
-    std::size_t h2 = std::hash<std::int32_t>()(rp.plane);
-    return h1 ^ (h2 << 1);
-  }
-};
-
 template <> struct hash<pathfinding::navigation_link> {
   std::size_t
   operator()(const pathfinding::navigation_link &nv) const {
@@ -70,7 +53,7 @@ void load_collision_csv(std::ifstream &file) {
 
 void add_navigation_link(
     const std::shared_ptr<navigation_link> nvl) {
-  navigation_link_map.emplace(nvl->to, nvl);
+  navigation_link_map.emplace(nvl->from, nvl);
 }
 
 class tile_cost_heuristic_fn {
@@ -83,7 +66,7 @@ public:
       } else {
         return std::get<std::shared_ptr<navigation_link>>(
                    pfn)
-            ->from;
+            ->to;
       }
     };
 
@@ -184,25 +167,6 @@ std::optional<path> find_path(const Tile &start,
 bool walk_path(const path &path) {
   using path_iter_t = pathfinder::path::const_iterator;
 
-  const auto on_screen = [](const Tile &tile) {
-    const auto t2s =
-        Internal::TileToMainscreen(tile, 0, 0, 0);
-    if (!t2s)
-      return false;
-
-    const auto blocking_boxes =
-        Mainscreen::GetBlockingWidgetBoxes();
-    for (const auto &box : blocking_boxes) {
-      if (box.Contains(t2s))
-        return false;
-    }
-
-    const auto canvas = Internal::Client.GetCanvas();
-    const auto box =
-        Box(0, 0, canvas.GetWidth(), canvas.GetHeight());
-    return box.Contains(t2s);
-  };
-
   const auto get_next_step = [&](path_iter_t iter,
                                  path_iter_t end) {
     auto result = iter;
@@ -213,7 +177,7 @@ bool walk_path(const path &path) {
 
     for (; iter < end; ++iter) {
       if (const auto tile = std::get_if<Tile>(&*iter)) {
-        if (!on_screen(*tile) ||
+        if (!Mainscreen::IsTileOn(*tile) ||
             tile->DistanceFrom(player.GetTile()) >= 15)
           continue;
 
