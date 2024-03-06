@@ -18,17 +18,21 @@ list(
         "$ENV{USERPROFILE}/AlpacaBot/Library"
 )
 
+# add_library(
+#     ${PROJECT_NAME} STATIC
+#         src/pathfinding.cpp
+#         src/bank.cpp
+#         src/navigation_link.cpp
+#         src/banks/bank_booth_bank.cpp
+#         src/banks/banker_bank.cpp
+# )
+
 add_library(
-    ${PROJECT_NAME} STATIC
-        src/pathfinding.cpp
-        src/bank.cpp
-        src/navigation_link.cpp
-        src/banks/bank_booth_bank.cpp
-        src/banks/banker_bank.cpp
+    ${PROJECT_NAME} INTERFACE
 )
 
 target_include_directories(
-    ${PROJECT_NAME} PUBLIC
+    ${PROJECT_NAME} INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${EXTRA_INCLUDE_DIRS}
 )
@@ -40,7 +44,7 @@ endif()
 
 
 target_link_libraries(
-    ${PROJECT_NAME} PRIVATE 
+    ${PROJECT_NAME} INTERFACE 
         astar
         ${ALPACABOT_LIBRARY}
 )

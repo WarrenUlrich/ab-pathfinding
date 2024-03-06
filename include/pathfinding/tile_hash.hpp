@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <Core/Types/Tile.hpp>
 
 namespace std {

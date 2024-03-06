@@ -1,6 +1,6 @@
 #pragma once
 
-#include "navigation_link.hpp"
+#include "../navigation_link.hpp"
 
 namespace pathfinding {
 class gate_nv : public navigation_link {

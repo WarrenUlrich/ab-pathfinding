@@ -33,7 +33,7 @@ func main() {
 	// Group records by plane
 	dataByPlane := make(map[string][][]string)
 	for _, record := range records[1:] { // Skip the header row
-		plane := record[1]
+		plane := record[2]
 		dataByPlane[plane] = append(dataByPlane[plane], record)
 	}
 
@@ -41,11 +41,11 @@ func main() {
 		// Find the min and max x, y coordinates
 		minX, minY, maxX, maxY := 1<<31-1, 1<<31-1, 0, 0
 		for _, record := range records {
-			x, err := strconv.Atoi(record[2])
+			x, err := strconv.Atoi(record[0])
 			if err != nil {
 				continue
 			}
-			y, err := strconv.Atoi(record[3])
+			y, err := strconv.Atoi(record[1])
 			if err != nil {
 				continue
 			}
@@ -69,55 +69,41 @@ func main() {
 
 		// Fill in the image with data
 		for _, record := range records {
-			x, err := strconv.Atoi(record[2])
+			x, err := strconv.Atoi(record[0])
 			if err != nil {
 				continue
 			}
-			y, err := strconv.Atoi(record[3])
+			y, err := strconv.Atoi(record[1])
 			if err != nil {
 				continue
 			}
-			flag, err := strconv.Atoi(record[4])
+			flag, err := strconv.Atoi(record[3])
 			if err != nil {
 				continue
 			}
 
-			// Determine the color based on the flag value
-			var col color.Color
-			switch flag {
-			case 0:
-				col = color.RGBA{0, 255, 0, 255}
-			case 0xFFFFFF:
-				col = color.RGBA{255, 0, 0, 255}
-			case 0x1000000:
-				col = color.RGBA{0, 0, 255, 255}
-			case 0x100:
-				col = color.RGBA{255, 255, 0, 255}
-			case 0x20000:
-				col = color.RGBA{128, 0, 128, 255}
-			case 0x200000:
-				col = color.RGBA{255, 128, 0, 255}
-			case 0x2:
-				col = color.RGBA{0, 255, 255, 255}
-			case 0x8:
-				col = color.RGBA{255, 0, 255, 255}
-			case 0x20:
-				col = color.RGBA{128, 128, 0, 255}
-			case 0x80:
-				col = color.RGBA{128, 128, 128, 255}
-			case 0x4:
-				col = color.RGBA{0, 128, 0, 255}
-			case 0x10:
-				col = color.RGBA{128, 0, 0, 255}
-			case 0x40:
-				col = color.RGBA{0, 0, 128, 255}
-			case 0x1:
-				col = color.RGBA{0, 128, 128, 255}
-			default:
-				col = color.RGBA{0, 0, 0, 255}
+			// Create a base color (dark gray)
+			r, g, b := 64, 64, 64
+
+			// Adjust the color based on the flag value
+			if flag&0xFFFFFF != 0 {
+				r, g, b = 128, 0, 0 // CLOSED: Dark red
+			}
+			if flag&0x1000000 != 0 {
+				r, g, b = 0, 0, 128 // UNINITIALIZED: Dark blue
+			}
+			if flag&0x100 != 0 {
+				r, g, b = 128, 128, 0 // OCCUPIED: Dark yellow
+			}
+			if flag&0x20000 != 0 {
+				r, g, b = 75, 0, 130 // SOLID: Dark purple (indigo)
+			}
+			if flag&0x200000 != 0 {
+				r, g, b = 128, 64, 0 // BLOCKED: Dark orange
 			}
 
 			// Set the pixel in the image
+			col := color.RGBA{uint8(r), uint8(g), uint8(b), 255}
 			img.Set(x-minX, height-(y-minY)-1, col)
 		}
 

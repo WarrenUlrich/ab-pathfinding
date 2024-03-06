@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <utility>
+
 namespace pathfinding {
 class region_plane {
 public:
