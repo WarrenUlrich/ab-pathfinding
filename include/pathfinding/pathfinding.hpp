@@ -5,10 +5,11 @@
 #include <astar/astar.hpp>
 
 #include "pathfinder_settings.hpp"
+#include "navigation_link.hpp"
 
 namespace pathfinding {
 using path_step =
-    std::variant<Tile, const navigation_link *>;
+    std::variant<Tile, std::shared_ptr<navigation_link>>;
 
 using path = std::vector<path_step>;
 
@@ -27,8 +28,9 @@ public:
       } else {
         // For navigation_link, you might choose to consider
         // its destination or source
-        const navigation_link *link =
-            std::get<const navigation_link *>(step);
+        std::shared_ptr<navigation_link> link =
+            std::get<std::shared_ptr<navigation_link>>(
+                step);
         return {link->to.X, link->to.Y, link->to.Plane};
       }
     };
@@ -56,8 +58,8 @@ public:
 
     const auto rp = region_plane(region, t.Plane);
 
-    // if (mapped_regions.find(rp) == mapped_regions.end())
-    //   return {};
+    if (!_pfs.region_mapped(region, t.Plane))
+      return {};
 
     constexpr std::array<
         std::tuple<int, int, Pathfinding::COLLISION_FLAG>,
@@ -68,12 +70,7 @@ public:
              {0, -1, Pathfinding::COLLISION_FLAG::SOUTH},
              {-1, 0, Pathfinding::COLLISION_FLAG::WEST}}};
 
-    auto flag = Pathfinding::COLLISION_FLAG::OPEN;
-    if (auto search = _pfs.collision_map.find(t);
-        search != _pfs.collision_map.end()) {
-      flag = search->second;
-    }
-
+    auto flag = _pfs.get_collision(t);
     for (const auto [dx, dy, df] : directions) {
       if (flag & df)
         continue;
@@ -85,14 +82,14 @@ public:
           _pfs.navigation_links.equal_range(neighbor);
       for (auto it = range.first; it != range.second;
            ++it) {
-        neighbors.emplace_back(it->second.get());
+        if (it->second->can_handle(_pfs))
+          neighbors.emplace_back(it->second);
       }
 
-      auto search = _pfs.collision_map.find(neighbor);
-      if (search == _pfs.collision_map.end()) {
+      flag = _pfs.get_collision(neighbor);
+      if (flag == Pathfinding::OPEN) {
         neighbors.emplace_back(neighbor);
       } else {
-        auto flag = search->second;
         if (!((flag & Pathfinding::BLOCKED) ||
               (flag & Pathfinding::OCCUPIED))) {
           neighbors.emplace_back(neighbor);
@@ -112,9 +109,8 @@ public:
   operator()(const path_step &t) const {
     if (auto tile = std::get_if<Tile>(&t)) {
       return this->operator()(*tile);
-    } else if (auto nv =
-                   std::get_if<const navigation_link *>(
-                       &t)) {
+    } else if (auto nv = std::get_if<
+                   std::shared_ptr<navigation_link>>(&t)) {
       return this->operator()(*nv);
     }
 
@@ -138,4 +134,69 @@ find_path(const Tile &from, const Tile &to,
 
   return pf.search(from, to);
 }
+
+bool walk_path(const path &p) {
+  auto at_end = [&]() {
+    auto end = p.back();
+    auto pos = Minimap::GetPosition();
+    if (auto tile = std::get_if<Tile>(&end)) {
+      return pos.DistanceFrom(*tile) < 4;
+    } else if (auto nav = std::get_if<
+                   std::shared_ptr<navigation_link>>(
+                   &end)) {
+      return pos.DistanceFrom((*nav)->to) < 4;
+    }
+
+    return false;
+  };
+
+  auto to_handle = [](path::const_iterator begin,
+                      path::const_iterator end) {
+    auto result = end;
+    while (begin != end) {
+      if (auto tile = std::get_if<Tile>(&*begin)) {
+        if (Mainscreen::IsTileOn(*tile))
+          result = begin;
+      } else if (auto nav = std::get_if<
+                     std::shared_ptr<navigation_link>>(
+                     &*begin)) {
+        auto pos = Minimap::GetPosition();
+        if (pos.DistanceFrom((*nav)->from) <= 4) {
+          result = begin;
+        }
+      }
+
+      begin++;
+    }
+
+    return result;
+  };
+
+  auto handle_step = [](const path_step &step) {
+    if (auto tile = std::get_if<Tile>(&step)) {
+      if (!Mainscreen::IsTileOn(*tile)) {
+        Camera::RotateTo(*tile, Camera::NORTH);
+      }
+
+      return Mainscreen::ClickTile(*tile);
+    } else if (auto nv = std::get_if<
+                   std::shared_ptr<navigation_link>>(
+                   &step)) {
+      return (*nv)->handle();
+    }
+
+    return false;
+  };
+
+  while (!at_end() && !Terminate) {
+    auto handle = to_handle(p.begin(), p.end());
+    auto dest = Minimap::GetDestination();
+    if (!dest || !Mainscreen::IsMoving()) {
+      handle_step(*handle);
+    }
+  }
+
+  return true;
+}
+
 } // namespace pathfinding

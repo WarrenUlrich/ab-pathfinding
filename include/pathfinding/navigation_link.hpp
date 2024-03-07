@@ -5,6 +5,8 @@
 #include "tile_hash.hpp"
 
 namespace pathfinding {
+class pathfinder_settings;
+
 class navigation_link {
 public:
   Tile from;
@@ -36,10 +38,22 @@ public:
     return !(*this == other);
   }
 
-  bool can_handle() const { return true; }
+  bool can_handle(const pathfinder_settings &pfs) const {
+    return true;
+  }
+
   virtual bool handle() const = 0;
 
   virtual ~navigation_link() = default;
+};
+
+class agility_navigation_link : public navigation_link {
+public:
+  std::int32_t required_lvl;
+
+  agility_navigation_link(const Tile &from, const Tile &to,
+                          std::int32_t required_lvl)
+      : navigation_link(from, to), required_lvl(required_lvl) {}
 };
 } // namespace pathfinding
 

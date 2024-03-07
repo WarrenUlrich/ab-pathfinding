@@ -252,6 +252,7 @@ bool OnStart() {
 }
 
 bool Loop() {
+  verify_and_clean();
   cache_current_region();
   paint();
   return true;
