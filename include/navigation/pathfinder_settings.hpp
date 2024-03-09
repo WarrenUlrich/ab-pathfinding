@@ -12,7 +12,7 @@
 #include "tile_hash.hpp"
 #include "util.hpp"
 
-namespace pathfinding {
+namespace navigation {
 class pathfinder_settings {
 public:
   std::unordered_multimap<Tile,

@@ -4,7 +4,7 @@
 
 #include "tile_hash.hpp"
 
-namespace pathfinding {
+namespace navigation {
 class teleport {
 public:
   Tile to;
@@ -18,9 +18,9 @@ public:
 } // namespace pathfinding
 
 namespace std {
-template <> struct hash<pathfinding::teleport> {
+template <> struct hash<navigation::teleport> {
   std::size_t
-  operator()(const pathfinding::teleport &tele) const {
+  operator()(const navigation::teleport &tele) const {
     return std::hash<Tile>()(tele.to);
   }
 };

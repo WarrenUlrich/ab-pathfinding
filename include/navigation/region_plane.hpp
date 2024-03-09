@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <utility>
 
-namespace pathfinding {
+namespace navigation {
 class region_plane {
 public:
   std::int32_t region;
@@ -27,9 +27,9 @@ public:
 } // namespace pathfinding
 
 namespace std {
-template <> struct hash<pathfinding::region_plane> {
+template <> struct hash<navigation::region_plane> {
   std::size_t
-  operator()(const pathfinding::region_plane &rp) const {
+  operator()(const navigation::region_plane &rp) const {
     std::size_t h1 = std::hash<std::int32_t>()(rp.region);
     std::size_t h2 = std::hash<std::int32_t>()(rp.plane);
     return h1 ^ (h2 << 1);

@@ -7,7 +7,7 @@
 #include <Core/Types/Area.hpp>
 #include <Core/Types/Tile.hpp>
 
-namespace pathfinding {
+namespace navigation {
 class bank {
 public:
   std::string name;

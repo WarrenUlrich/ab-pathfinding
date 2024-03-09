@@ -3,7 +3,7 @@
 #include "../navigation_link.hpp"
 #include "../pathfinder_settings.hpp"
 
-namespace pathfinding {
+namespace navigation {
 class gate_nv : public navigation_link {
 public:
   // Should be the closed position of the gate

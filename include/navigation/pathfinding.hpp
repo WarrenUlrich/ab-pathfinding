@@ -7,7 +7,7 @@
 #include "pathfinder_settings.hpp"
 #include "navigation_link.hpp"
 
-namespace pathfinding {
+namespace navigation {
 using path_step =
     std::variant<Tile, std::shared_ptr<navigation_link>>;
 

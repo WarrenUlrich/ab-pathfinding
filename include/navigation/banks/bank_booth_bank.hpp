@@ -2,14 +2,14 @@
 
 #include "../bank.hpp"
 
-namespace pathfinding {
-class banker_bank : public bank {
+namespace navigation {
+class bank_booth_bank : public bank {
 public:
-  banker_bank(const std::string &name, const Area &area,
+  bank_booth_bank(const std::string &name, const Area &area,
                   const Tile &pathfinding_tile);
 
   bool open() const override;
 
-  ~banker_bank() = default;
+  ~bank_booth_bank() = default;
 };
 } // namespace pathfinding

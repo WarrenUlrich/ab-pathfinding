@@ -4,7 +4,7 @@
 
 #include "tile_hash.hpp"
 
-namespace pathfinding {
+namespace navigation {
 class pathfinder_settings;
 
 class navigation_link {
@@ -58,9 +58,9 @@ public:
 } // namespace pathfinding
 
 namespace std {
-template <> struct hash<pathfinding::navigation_link> {
+template <> struct hash<navigation::navigation_link> {
   std::size_t
-  operator()(const pathfinding::navigation_link &nv) const {
+  operator()(const navigation::navigation_link &nv) const {
     std::size_t h1 = std::hash<Tile>()(nv.from);
     std::size_t h2 = std::hash<Tile>()(nv.to);
     return h1 ^ (h2 << 1);
