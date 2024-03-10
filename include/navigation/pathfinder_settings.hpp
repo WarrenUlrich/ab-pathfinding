@@ -61,6 +61,45 @@ public:
            (found->second & Pathfinding::SOLID);
   }
 
+  std::optional<Tile>
+  find_closest_walkable(const Tile &center_tile,
+                        std::int32_t max_radius = 1) const {
+    std::optional<Tile> closest_tile = Tile();
+    double closest_distance =
+        std::numeric_limits<double>::max();
+
+    for (std::int32_t radius = 1; radius <= max_radius;
+         ++radius) {
+      bool found = false;
+      for (std::int32_t dx = -radius; dx <= radius; ++dx) {
+        for (std::int32_t dy = -radius; dy <= radius;
+             ++dy) {
+          if (std::abs(dx) != radius &&
+              std::abs(dy) != radius)
+            continue; // Skip tiles that are not on the
+                      // current circle's perimeter
+
+          Tile candidate_tile =
+              Tile(center_tile.X + dx, center_tile.Y + dy,
+                   center_tile.Plane);
+          std::cout << "center: " << center_tile << '\n';
+          if (!tile_blocked(candidate_tile)) {
+            double distance = std::sqrt(dx * dx + dy * dy);
+            if (distance < closest_distance) {
+              closest_distance = distance;
+              closest_tile = candidate_tile;
+              found = true;
+            }
+          }
+        }
+      }
+      if (found)
+        break;
+    }
+
+    return closest_tile;
+  }
+
   void read_collision(std::ifstream &file) {
     std::string line;
     std::getline(file, line); // skip csv header
@@ -90,4 +129,4 @@ private:
   std::unordered_map<Tile, Pathfinding::COLLISION_FLAG>
       _collision_map;
 };
-} // namespace pathfinding
+} // namespace navigation

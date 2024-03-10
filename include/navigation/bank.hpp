@@ -4,35 +4,19 @@
 #include <string>
 #include <vector>
 
-#include <Core/Types/Area.hpp>
-#include <Core/Types/Tile.hpp>
+#include <Game/Core.hpp>
 
 namespace navigation {
 class bank {
 public:
-  std::string name;
-  Area area;
-  Tile pathfinding_tile;
+  Tile location;
+  Tile stand_tile;
 
-  bank() = default;
+  bank(const Tile &location, const Tile &stand_tile)
+      : location(location), stand_tile(stand_tile) {}
 
-  bank(const bank &other);
-
-  bank(const std::string &name, const Area &area,
-       const Tile &pathfinding_tile);
-
-  bool at() const;
-
-  virtual bool can_use() const;
+  virtual bool available() const { return true; }
 
   virtual bool open() const = 0;
-
-  virtual ~bank() = default;
-
-  using bank_vec = std::vector<std::shared_ptr<bank>>;
-
-  static const bank_vec banks;
-
-  static bank_vec::const_iterator get_closest();
 };
-} // namespace pathfinding
+} // namespace navigation
