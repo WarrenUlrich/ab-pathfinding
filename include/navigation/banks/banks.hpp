@@ -7,12 +7,15 @@
 
 namespace navigation {
 static std::vector<std::shared_ptr<bank>> banks = {
-    // Varrock East - Northern booth
+    // Varrock West - Northern booth
     std::make_shared<bank_booth>(Tile(3186, 3444, 0),
                                  Tile(3185, 3444, 0)),
-    // Varrock East - Southern booth
+    // Varrock West - Southern booth
     std::make_shared<bank_booth>(Tile(3186, 3436, 0),
                                  Tile(3185, 3436, 0)),
+    // Varrock East - Middle booth
+    std::make_shared<bank_booth>(Tile(3253, 3419, 0),
+                                 Tile(3253, 3420, 0)),
 };
 
 std::shared_ptr<bank> get_closest_bank(const Tile &tile) {
