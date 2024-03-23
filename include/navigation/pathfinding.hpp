@@ -135,16 +135,16 @@ find_path(const Tile &from, const Tile &to,
   return pf.search(from, to);
 }
 
-bool walk_path(const path &p) {
+bool walk_path(const path &p, std::int32_t distance = 5) {
   auto at_end = [&]() {
     auto end = p.back();
     auto pos = Minimap::GetPosition();
     if (auto tile = std::get_if<Tile>(&end)) {
-      return pos.DistanceFrom(*tile) < 4;
+      return pos.DistanceFrom(*tile) < distance;
     } else if (auto nav = std::get_if<
                    std::shared_ptr<navigation_link>>(
                    &end)) {
-      return pos.DistanceFrom((*nav)->to) < 4;
+      return pos.DistanceFrom((*nav)->to) < distance;
     }
 
     return false;

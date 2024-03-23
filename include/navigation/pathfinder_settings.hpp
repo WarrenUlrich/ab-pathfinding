@@ -30,7 +30,7 @@ public:
       : navigation_links(std::move(other.navigation_links)),
         _mapped_regions(std::move(other._mapped_regions)),
         _collision_map(std::move(other._collision_map)) {}
-  
+
   void set_collision(const Tile &tile,
                      Pathfinding::COLLISION_FLAG flag) {
     _mapped_regions.emplace(
@@ -92,7 +92,6 @@ public:
           Tile candidate_tile =
               Tile(center_tile.X + dx, center_tile.Y + dy,
                    center_tile.Plane);
-          std::cout << "center: " << center_tile << '\n';
           if (!tile_blocked(candidate_tile)) {
             double distance = std::sqrt(dx * dx + dy * dy);
             if (distance < closest_distance) {
