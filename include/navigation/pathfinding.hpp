@@ -4,8 +4,8 @@
 
 #include <astar/astar.hpp>
 
-#include "pathfinder_settings.hpp"
 #include "navigation_link.hpp"
+#include "pathfinder_settings.hpp"
 
 namespace navigation {
 using path_step =
@@ -45,6 +45,84 @@ private:
   const pathfinder_settings &_pfs;
 };
 
+// class neighbors_fn {
+// public:
+//   neighbors_fn(const pathfinder_settings &pfs)
+//       : _pfs(pfs) {}
+
+//   std::vector<path_step> operator()(const Tile &t) const
+//   {
+//     std::vector<path_step> neighbors;
+
+//     const auto region =
+//         ((std::int32_t)(((t.X >> 6) << 8) | (t.Y >> 6)));
+
+//     const auto rp = region_plane(region, t.Plane);
+
+//     if (!_pfs.region_mapped(region, t.Plane))
+//       return {};
+
+//     constexpr std::array<
+//         std::tuple<int, int,
+//         Pathfinding::COLLISION_FLAG>, 4> directions = {
+//             {{0, 1, Pathfinding::COLLISION_FLAG::NORTH},
+//              {1, 0, Pathfinding::COLLISION_FLAG::EAST},
+//              {0, -1, Pathfinding::COLLISION_FLAG::SOUTH},
+//              {-1, 0,
+//              Pathfinding::COLLISION_FLAG::WEST}}};
+
+//     auto flag = _pfs.get_collision(t);
+//     for (const auto [dx, dy, df] : directions) {
+//       if (flag & df)
+//         continue;
+
+//       const auto neighbor =
+//           Tile{t.X + dx, t.Y + dy, t.Plane};
+
+//       auto range =
+//           _pfs.navigation_links.equal_range(neighbor);
+//       for (auto it = range.first; it != range.second;
+//            ++it) {
+//         if (it->second->can_handle(_pfs))
+//           neighbors.emplace_back(it->second);
+//       }
+
+//       flag = _pfs.get_collision(neighbor);
+//       if (flag == Pathfinding::OPEN) {
+//         neighbors.emplace_back(neighbor);
+//       } else {
+//         if (!((flag & Pathfinding::BLOCKED) ||
+//               (flag & Pathfinding::OCCUPIED))) {
+//           neighbors.emplace_back(neighbor);
+//         }
+//       }
+//     }
+
+//     return neighbors;
+//   }
+
+//   std::vector<path_step> operator()(
+//       const std::shared_ptr<navigation_link> &t) const {
+//     return this->operator()(t->to);
+//   }
+
+//   std::vector<path_step>
+//   operator()(const path_step &t) const {
+//     if (auto tile = std::get_if<Tile>(&t)) {
+//       return this->operator()(*tile);
+//     } else if (auto nv = std::get_if<
+//                    std::shared_ptr<navigation_link>>(&t))
+//                    {
+//       return this->operator()(*nv);
+//     }
+
+//     return {};
+//   }
+
+// private:
+//   const pathfinder_settings &_pfs;
+// };
+
 class neighbors_fn {
 public:
   neighbors_fn(const pathfinder_settings &pfs)
@@ -52,32 +130,36 @@ public:
 
   std::vector<path_step> operator()(const Tile &t) const {
     std::vector<path_step> neighbors;
-
     const auto region =
         ((std::int32_t)(((t.X >> 6) << 8) | (t.Y >> 6)));
-
-    const auto rp = region_plane(region, t.Plane);
-
     if (!_pfs.region_mapped(region, t.Plane))
       return {};
 
     constexpr std::array<
-        std::tuple<int, int, Pathfinding::COLLISION_FLAG>,
+        std::tuple<int, int, Pathfinding::COLLISION_FLAG,
+                   Pathfinding::COLLISION_FLAG>,
         4>
         directions = {
-            {{0, 1, Pathfinding::COLLISION_FLAG::NORTH},
-             {1, 0, Pathfinding::COLLISION_FLAG::EAST},
-             {0, -1, Pathfinding::COLLISION_FLAG::SOUTH},
-             {-1, 0, Pathfinding::COLLISION_FLAG::WEST}}};
+            {{0, 1, Pathfinding::COLLISION_FLAG::SOUTH,
+              Pathfinding::COLLISION_FLAG::NORTH},
+             {1, 0, Pathfinding::COLLISION_FLAG::WEST,
+              Pathfinding::COLLISION_FLAG::EAST},
+             {0, -1, Pathfinding::COLLISION_FLAG::NORTH,
+              Pathfinding::COLLISION_FLAG::SOUTH},
+             {-1, 0, Pathfinding::COLLISION_FLAG::EAST,
+              Pathfinding::COLLISION_FLAG::WEST}}};
 
     auto flag = _pfs.get_collision(t);
-    for (const auto [dx, dy, df] : directions) {
-      if (flag & df)
-        continue;
-
+    for (const auto [dx, dy, df, df_neighbor] :
+         directions) {
       const auto neighbor =
           Tile{t.X + dx, t.Y + dy, t.Plane};
+      auto flag_neighbor = _pfs.get_collision(neighbor);
 
+      if (flag & df || flag_neighbor & df_neighbor)
+        continue;
+
+      // Check for navigation links at the neighbor tile
       auto range =
           _pfs.navigation_links.equal_range(neighbor);
       for (auto it = range.first; it != range.second;
@@ -86,14 +168,10 @@ public:
           neighbors.emplace_back(it->second);
       }
 
-      flag = _pfs.get_collision(neighbor);
-      if (flag == Pathfinding::OPEN) {
+      // Check if the neighbor tile is walkable
+      if (!(flag_neighbor & (Pathfinding::BLOCKED |
+                             Pathfinding::OCCUPIED))) {
         neighbors.emplace_back(neighbor);
-      } else {
-        if (!((flag & Pathfinding::BLOCKED) ||
-              (flag & Pathfinding::OCCUPIED))) {
-          neighbors.emplace_back(neighbor);
-        }
       }
     }
 
@@ -109,9 +187,9 @@ public:
   operator()(const path_step &t) const {
     if (auto tile = std::get_if<Tile>(&t)) {
       return this->operator()(*tile);
-    } else if (auto nv = std::get_if<
+    } else if (auto nav = std::get_if<
                    std::shared_ptr<navigation_link>>(&t)) {
-      return this->operator()(*nv);
+      return this->operator()(*nav);
     }
 
     return {};
@@ -135,16 +213,16 @@ find_path(const Tile &from, const Tile &to,
   return pf.search(from, to);
 }
 
-bool walk_path(const path &p) {
+bool walk_path(const path &p, std::int32_t distance = 5) {
   auto at_end = [&]() {
     auto end = p.back();
     auto pos = Minimap::GetPosition();
     if (auto tile = std::get_if<Tile>(&end)) {
-      return pos.DistanceFrom(*tile) < 4;
+      return pos.DistanceFrom(*tile) < distance;
     } else if (auto nav = std::get_if<
                    std::shared_ptr<navigation_link>>(
                    &end)) {
-      return pos.DistanceFrom((*nav)->to) < 4;
+      return pos.DistanceFrom((*nav)->to) < distance;
     }
 
     return false;
@@ -199,4 +277,4 @@ bool walk_path(const path &p) {
   return true;
 }
 
-} // namespace pathfinding
+} // namespace navigation
