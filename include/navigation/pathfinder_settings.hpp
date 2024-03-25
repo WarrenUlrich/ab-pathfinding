@@ -21,6 +21,16 @@ public:
 
   pathfinder_settings() = default;
 
+  pathfinder_settings(const pathfinder_settings &other)
+      : navigation_links(other.navigation_links),
+        _mapped_regions(other._mapped_regions),
+        _collision_map(other._collision_map) {}
+
+  pathfinder_settings(pathfinder_settings &&other) noexcept
+      : navigation_links(std::move(other.navigation_links)),
+        _mapped_regions(std::move(other._mapped_regions)),
+        _collision_map(std::move(other._collision_map)) {}
+
   void set_collision(const Tile &tile,
                      Pathfinding::COLLISION_FLAG flag) {
     _mapped_regions.emplace(
@@ -82,7 +92,6 @@ public:
           Tile candidate_tile =
               Tile(center_tile.X + dx, center_tile.Y + dy,
                    center_tile.Plane);
-          std::cout << "center: " << center_tile << '\n';
           if (!tile_blocked(candidate_tile)) {
             double distance = std::sqrt(dx * dx + dy * dy);
             if (distance < closest_distance) {
