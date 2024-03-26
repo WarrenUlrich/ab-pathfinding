@@ -16,6 +16,9 @@ static std::vector<std::shared_ptr<bank>> banks = {
     // Varrock East - Middle booth
     std::make_shared<bank_booth>(Tile(3253, 3419, 0),
                                  Tile(3253, 3420, 0)),
+    // Edgeville - NE booth
+    std::make_shared<bank_booth>(Tile(3096, 3493, 0),
+                                 Tile(3096, 3494, 0)),
 };
 
 std::shared_ptr<bank> get_closest_bank(const Tile &tile) {
